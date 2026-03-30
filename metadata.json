@@ -1,0 +1,5 @@
+{
+  "name": "TrustRetail AI - Inventory Reliability System",
+  "description": "An AI-powered retail monitoring platform that calculates shop reliability scores based on inventory accuracy and customer feedback.",
+  "requestFramePermissions": []
+}
