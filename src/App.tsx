@@ -6,6 +6,7 @@
 import React from 'react';
 import { Toaster } from 'sonner';
 import { Store } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 import Layout from './components/Layout';
 import ProjectPlan from './components/ProjectPlan';
 import SystemDemo from './components/SystemDemo';
@@ -145,6 +146,7 @@ export default function App() {
       <Layout activeRole={activeRole} onRoleChange={setActiveRole}>
         {renderContent()}
       </Layout>
+      <Analytics />
     </>
   );
 }
