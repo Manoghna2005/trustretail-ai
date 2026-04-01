@@ -3,57 +3,45 @@ pipeline {
 
     environment {
         IMAGE_NAME = "trustretail-ai"
-        CONTAINER_NAME = "trustretail-ai-container"
+        CONTAINER_NAME = "trustretail-app"
         PORT = "3000"
         VITE_GEMINI_API_KEY = credentials('gemini-api-key')
     }
 
     stages {
+
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'
-            }
-        }
-
-        stage('Install Dependencies') {
-            steps {
-                sh 'npm install'
-            }
-        }
-
-        stage('Lint / Type Check') {
-            steps {
-                sh 'npm run lint'
+                git branch: 'main', url: 'https://github.com/Manoghna2005/trustretail-ai.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                docker build \
-                  --build-arg VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY \
-                  -t $IMAGE_NAME .
-                '''
+                bat """
+                docker build ^
+                --build-arg VITE_GEMINI_API_KEY=%VITE_GEMINI_API_KEY% ^
+                -t %IMAGE_NAME% .
+                """
             }
         }
 
         stage('Stop Old Container') {
             steps {
-                sh '''
-                docker stop $CONTAINER_NAME || true
-                docker rm $CONTAINER_NAME || true
-                '''
+                bat """
+                docker rm -f %CONTAINER_NAME% || exit 0
+                """
             }
         }
 
         stage('Run New Container') {
             steps {
-                sh '''
-                docker run -d \
-                  --name $CONTAINER_NAME \
-                  -p $PORT:80 \
-                  $IMAGE_NAME
-                '''
+                bat """
+                docker run -d ^
+                --name %CONTAINER_NAME% ^
+                -p %PORT%:80 ^
+                %IMAGE_NAME%
+                """
             }
         }
     }
