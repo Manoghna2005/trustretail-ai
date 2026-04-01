@@ -16,12 +16,38 @@ pipeline {
             }
         }
 
+        stage('Install Dependencies') {
+            steps {
+                bat 'npm install'
+            }
+        }
+
+        stage('TypeScript Validation') {
+            steps {
+                bat 'npm run lint'
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                bat 'npm run build'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 bat """
                 docker build ^
                 --build-arg VITE_GEMINI_API_KEY=%VITE_GEMINI_API_KEY% ^
                 -t %IMAGE_NAME% .
+                """
+            }
+        }
+
+        stage('Scan Docker Image') {
+            steps {
+                bat """
+                "C:\\Users\\Manu\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AquaSecurity.Trivy_Microsoft.Winget.Source_8wekyb3d8bbwe\\trivy.exe" image --severity HIGH,CRITICAL %IMAGE_NAME%
                 """
             }
         }
@@ -44,14 +70,23 @@ pipeline {
                 """
             }
         }
+
+        stage('Health Check') {
+            steps {
+                bat """
+                timeout /t 10 > nul
+                curl http://localhost:%PORT%
+                """
+            }
+        }
     }
 
     post {
         success {
-            echo 'Deployment successful!'
+            echo 'CI/CD + DevSecOps pipeline executed successfully!'
         }
         failure {
-            echo 'Deployment failed!'
+            echo 'Pipeline failed. Please check stage logs.'
         }
     }
 }
