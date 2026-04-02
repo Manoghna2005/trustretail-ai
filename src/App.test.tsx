@@ -1,9 +1,23 @@
-@"
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { fireEvent, render, screen } from "@testing-library/react";
+import App from "./App";
 
-test('renders main application heading', () => {
-  render(<App />);
-  expect(screen.getByText(/TrustRetail/i)).toBeInTheDocument();
+beforeEach(() => {
+  localStorage.clear();
 });
-"@ | Set-Content src\App.test.tsx
+
+test("renders default shop owner dashboard", () => {
+  render(<App />);
+  expect(screen.getByText("Inventory Management")).toBeInTheDocument();
+});
+
+test("switches to customer view from sidebar", () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole("button", { name: "Customer" }));
+  expect(screen.getByText("Nearby Shops")).toBeInTheDocument();
+});
+
+test("switches to complaints hub and shows complaint search", () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole("button", { name: "Complaints Hub" }));
+  expect(screen.getByPlaceholderText("Search complaints...")).toBeInTheDocument();
+});
