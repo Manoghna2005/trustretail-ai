@@ -5,6 +5,7 @@ This repo now includes:
 - `docker-compose` stack with Traefik reverse proxy
 - Monitoring with Prometheus + Grafana + cAdvisor + Node Exporter + Blackbox Exporter
 - Jenkins CI/CD pipeline with Trivy image scanning
+- GitHub Actions CI/CD with Trivy scan + optional Render auto-deploy hook
 - Render blueprint config (`render.yaml`)
 
 ## 1) Local App Run
@@ -69,7 +70,26 @@ Steps:
 5. Render gives you a URL like:
    `https://<service-name>.onrender.com`
 
-## 5) Security Notes
+## 5) GitHub Actions Pipeline
+
+Workflow file:
+- `.github/workflows/ci-cd.yml`
+
+What it does:
+1. `npm ci`
+2. `npm run test`
+3. `npm run build`
+4. Docker build
+5. Trivy vulnerability scan (HIGH/CRITICAL fails pipeline)
+6. Optional Render deploy trigger on push to `main`
+
+Add these GitHub repository secrets:
+- `VITE_GEMINI_API_KEY`
+- `RENDER_DEPLOY_HOOK_URL` (optional, from Render service settings -> Deploy Hook)
+
+## 6) Jenkins Pipeline
+
+## 7) Security Notes
 
 - Never commit real API keys
 - Rotate/revoke any key that was exposed publicly
