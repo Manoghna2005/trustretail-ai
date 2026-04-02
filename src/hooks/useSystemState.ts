@@ -41,20 +41,18 @@ export function useSystemState() {
     return saved || 'shop-1';
   });
 
-  // Broadcast Channel for cross-tab sync
+  // Cross-tab sync via storage events (better compat)
   useEffect(() => {
-    const channel = new BroadcastChannel(SYNC_CHANNEL);
-    
-    channel.onmessage = (event) => {
-      const { type, payload } = event.data;
-      if (type === 'UPDATE_SHOPS') setShops(payload);
-      if (type === 'UPDATE_COMPLAINTS') setComplaints(payload);
-      if (type === 'UPDATE_LOGS') setLogs(payload);
-      if (type === 'UPDATE_SHOPPING_LIST') setShoppingList(payload);
-      if (type === 'UPDATE_CART') setCart(payload);
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'retail_shops') setShops(JSON.parse(e.newValue || '[]'));
+      if (e.key === 'retail_complaints') setComplaints(JSON.parse(e.newValue || '[]'));
+      if (e.key === 'retail_logs') setLogs(JSON.parse(e.newValue || '[]'));
+      if (e.key === 'shopping_list') setShoppingList(JSON.parse(e.newValue || '[]'));
+      if (e.key === 'retail_cart') setCart(JSON.parse(e.newValue || '[]'));
     };
 
-    return () => channel.close();
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Simulation: Automatic Stock Updates
@@ -95,30 +93,25 @@ export function useSystemState() {
     return () => clearInterval(interval);
   }, []);
 
-  // Persist to localStorage and broadcast
+  // Persist to localStorage (triggers storage events for other tabs)
   useEffect(() => {
     localStorage.setItem('retail_shops', JSON.stringify(shops));
-    new BroadcastChannel(SYNC_CHANNEL).postMessage({ type: 'UPDATE_SHOPS', payload: shops });
   }, [shops]);
 
   useEffect(() => {
     localStorage.setItem('retail_complaints', JSON.stringify(complaints));
-    new BroadcastChannel(SYNC_CHANNEL).postMessage({ type: 'UPDATE_COMPLAINTS', payload: complaints });
   }, [complaints]);
 
   useEffect(() => {
     localStorage.setItem('retail_logs', JSON.stringify(logs));
-    new BroadcastChannel(SYNC_CHANNEL).postMessage({ type: 'UPDATE_LOGS', payload: logs });
   }, [logs]);
 
   useEffect(() => {
     localStorage.setItem('shopping_list', JSON.stringify(shoppingList));
-    new BroadcastChannel(SYNC_CHANNEL).postMessage({ type: 'UPDATE_SHOPPING_LIST', payload: shoppingList });
   }, [shoppingList]);
 
   useEffect(() => {
     localStorage.setItem('retail_cart', JSON.stringify(cart));
-    new BroadcastChannel(SYNC_CHANNEL).postMessage({ type: 'UPDATE_CART', payload: cart });
   }, [cart]);
 
   useEffect(() => {

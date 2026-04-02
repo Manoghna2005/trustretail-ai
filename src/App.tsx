@@ -4,8 +4,9 @@
  */
 
 import React from 'react';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import { Store } from 'lucide-react';
+
 import Layout from './components/Layout';
 import ProjectPlan from './components/ProjectPlan';
 import SystemDemo from './components/SystemDemo';
@@ -41,6 +42,9 @@ export default function App() {
 
   const handleResolveComplaint = (id: string) => {
     setComplaints(prev => prev.map(c => c.id === id ? { ...c, status: 'Resolved' } : c));
+    toast('Complaint resolved!', {
+      description: 'Status updated to resolved.',
+    });
   };
 
   const handleRefreshAI = (shopId: string) => {

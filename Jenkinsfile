@@ -1,92 +1,92 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
     environment {
-        IMAGE_NAME = "trustretail-ai"
-        CONTAINER_NAME = "trustretail-app"
-        PORT = "3000"
-        VITE_GEMINI_API_KEY = credentials('gemini-api-key')
+        APP_IMAGE = "trustretail-ai:${env.BUILD_NUMBER}"
+        APP_IMAGE_LATEST = "trustretail-ai:latest"
+        TRAEFIK_HOST = "trustretail.localhost"
     }
 
     stages {
-
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Manoghna2005/trustretail-ai.git'
+                checkout scm
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                bat 'npm install'
+                sh 'npm ci'
             }
         }
 
-        stage('TypeScript Validation') {
+        stage('Run Tests') {
             steps {
-                bat 'npm run lint'
+                sh 'npm run test'
             }
         }
 
-        stage('Build Frontend') {
+        stage('Build App') {
             steps {
-                bat 'npm run build'
+                sh 'npm run build'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat """
-                docker build ^
-                --build-arg VITE_GEMINI_API_KEY=%VITE_GEMINI_API_KEY% ^
-                -t %IMAGE_NAME% .
-                """
+                withCredentials([string(credentialsId: 'gemini-api-key', variable: 'VITE_GEMINI_API_KEY')]) {
+                    sh '''
+                      docker build \
+                        --build-arg VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY} \
+                        -t ${APP_IMAGE} \
+                        -t ${APP_IMAGE_LATEST} .
+                    '''
+                }
             }
         }
 
-        stage('Scan Docker Image') {
+        stage('Trivy Scan') {
             steps {
-                bat """
-                "C:\\Users\\Manu\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AquaSecurity.Trivy_Microsoft.Winget.Source_8wekyb3d8bbwe\\trivy.exe" image --severity HIGH,CRITICAL %IMAGE_NAME%
-                """
+                sh '''
+                  trivy image \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 1 \
+                    --no-progress \
+                    ${APP_IMAGE}
+                '''
             }
         }
 
-        stage('Stop Old Container') {
+        stage('Deploy With Compose') {
             steps {
-                bat """
-                docker rm -f %CONTAINER_NAME% || exit 0
-                """
-            }
-        }
-
-        stage('Run New Container') {
-            steps {
-                bat """
-                docker run -d ^
-                --name %CONTAINER_NAME% ^
-                -p %PORT%:80 ^
-                %IMAGE_NAME%
-                """
-            }
-        }
-
-        stage('Health Check') {
-            steps {
-                bat """
-                timeout /t 10 > nul
-                curl http://localhost:%PORT%
-                """
+                withCredentials([
+                    string(credentialsId: 'gemini-api-key', variable: 'VITE_GEMINI_API_KEY'),
+                    string(credentialsId: 'grafana-admin-user', variable: 'GRAFANA_ADMIN_USER'),
+                    string(credentialsId: 'grafana-admin-password', variable: 'GRAFANA_ADMIN_PASSWORD')
+                ]) {
+                    sh '''
+                      export TRAEFIK_HOST=${TRAEFIK_HOST}
+                      docker compose up -d --build
+                    '''
+                }
             }
         }
     }
 
     post {
+        always {
+            sh 'docker images --format "table {{.Repository}}\\t{{.Tag}}\\t{{.Size}}" | head -n 20 || true'
+        }
         success {
-            echo 'CI/CD + DevSecOps pipeline executed successfully!'
+            echo 'Pipeline completed: tests + build + Trivy + deployment succeeded.'
         }
         failure {
-            echo 'Pipeline failed. Please check stage logs.'
+            echo 'Pipeline failed. Check logs for the failed stage.'
         }
     }
 }

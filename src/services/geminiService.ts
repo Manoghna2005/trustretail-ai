@@ -9,8 +9,7 @@ import { PredictionResult } from "../types";
 // ✅ Vite frontend env variable
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
-// Optional check in browser console
-console.log("Frontend Gemini key exists =", !!apiKey);
+// Removed console.log for security
 
 // ✅ Gemini client
 const ai = new GoogleGenAI({ apiKey });
