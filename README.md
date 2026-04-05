@@ -6,6 +6,8 @@ This repo now includes:
 - Monitoring with Prometheus + Grafana + cAdvisor + Node Exporter + Blackbox Exporter
 - Jenkins CI/CD pipeline with Trivy image scanning
 - GitHub Actions CI/CD with Trivy scan + optional Render auto-deploy hook
+- CodeQL static security analysis workflow
+- Dependabot automated dependency update PRs
 - Render blueprint config (`render.yaml`)
 
 ## 1) Local App Run
