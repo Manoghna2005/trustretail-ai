@@ -42,15 +42,19 @@ jobs:
             -t trustretail-ai:${{ github.sha }} \
             -t trustretail-ai:latest .
 
-      - name: Trivy image scan
-        uses: aquasecurity/trivy-action@v0.33.1
+      - name: Set up Trivy
+        uses: aquasecurity/setup-trivy@v0.2.2
         with:
-          image-ref: trustretail-ai:${{ github.sha }}
-          format: table
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-          cache: "false"
+          version: v0.65.0
+
+      - name: Trivy image scan
+        run: |
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --exit-code 1 \
+            --no-progress \
+            trustretail-ai:${{ github.sha }}
 
       - name: Trigger Render deploy
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
